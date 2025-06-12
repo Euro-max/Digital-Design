@@ -19,4 +19,5 @@ output y
     S1:if(x) next=S0;else next=S1;
     endcase
     end
+    assign y=x&&(current==S1);
 endmodule
