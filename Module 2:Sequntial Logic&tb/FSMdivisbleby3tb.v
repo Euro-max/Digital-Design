@@ -68,7 +68,7 @@ end
                 x = $random % 2; // Generate random 0 or 1 for input 'x'
                 current_cycle = current_cycle + 1;
     
-                // Simple if condition for verification
+                
                 if (y === y_golden) begin
                     correct = correct + 1;
                     $display("%0tns | %b   | %b   | %b | %b     | %b      | PASS   | %0d      | %0d     | Random Data Cycle %0d",
@@ -85,7 +85,7 @@ end
             // Assert asynchronous reset during operation (example of mid-operation reset)
             $display("\n--- Asserting Async Reset During Operation ---");
             #(clock / 2); // Apply reset mid-cycle (asynchronous nature)
-            rst = 1'b0;   // Assert active-LOW reset
+            rst = 1'b1;   // Assert active-HIGH reset
             
             // Verification after mid-operation reset assertion
             if (y === y_golden) begin
@@ -101,7 +101,7 @@ end
     
             #(2 * clock); // Hold reset for 2 full clock periods
     
-            rst = 1'b1;   // Deassert active-LOW reset
+            rst = 1'b0;   // Deassert active-HIGH reset
     
             // Verification after mid-operation reset release
             #(clock); // Wait for at least one clock cycle after reset release
