@@ -1,0 +1,144 @@
+module RISC_V_Processor(
+    input clk,
+    input reset,
+    output[31:0]no
+);
+
+
+    wire [31:0] PC, PCNext;
+    wire PCSrc;
+    wire [31:0] DataMemory_out;
+    wire [31:0] ImmExt;
+    wire [31:0] RD1, RD2, WD3;
+    wire [31:0] ALUResult, ALUOut;
+    wire [31:0] ReadData;
+        wire [31:0] instruction_out;
+    wire Zero, Sign;
+    
+    // Control signals
+    wire RegWrite, ALUSrc, MemWrite, ResultSrc, Branch;
+    wire [1:0] ImmSrc, ALUOp;
+    wire [2:0] ALUControl;
+    
+    // Instruction fields
+    wire [6:0] opcode;
+    wire [4:0] rs1, rs2, rd;
+    wire [2:0] funct3;
+    wire funct7;
+    
+    // Extract instruction fields
+    assign opcode = instruction_out[6:0];
+    assign rd = instruction_out[11:7];
+    assign funct3 = instruction_out[14:12];
+    assign rs1 = instruction_out[19:15];
+    assign rs2 = instruction_out[24:20];
+    assign funct7 = instruction_out[30];
+    wire[31:0]PCNext_from_PCNext_Calc;
+    // ControlUnit
+   Control_Unit main_dec (
+        .opcode(instruction_out[6:0]),
+        .RegWrite(RegWrite),
+        .ImmSrc(ImmSrc),
+        .ALUSrc(ALUSrc),
+        .MemWrite(MemWrite),
+        .ResultSrc(ResultSrc),
+        .Branch(Branch),
+        .ALUOp(ALUOp)
+    );
+        // Sign Extend
+          SignExt sign_ext(
+              .Instr(instruction_out),
+              .ImmSrc(ImmSrc),
+              .ImmExt(ImmExt)
+          );
+ NextPCLogic PC_Next (
+            .PC(PC),
+            .ImmExt(ImmExt), 
+            .PCSrc(PCSrc), 
+            .PCNext(PCNext_from_PCNext_Calc) 
+        );
+        
+        ProgramCounter P_C (
+            .clk(clk),
+            .areset(~reset),
+            .load(1'b1), 
+            .PCNext(PCNext_from_PCNext_Calc), 
+            .PC(PC)
+        );
+    
+   // Instruction Memory (ROM)
+ROM imem(
+    .addr(PC),      // Convert byte address to word address (6 bits)
+    .instr(instruction_out)        // 32-bit instruction output
+);
+    
+    // Register File
+    RegFile reg_file(
+        .clk(clk),
+        .reset(reset),
+        .we3(RegWrite),
+        .a1(instruction_out[19:15]),
+        .a2(instruction_out[24:20]),
+        .a3(instruction_out[11:7]),
+        .wd3(WD3),
+        .rd1(RD1),
+        .rd2(RD2)
+    );
+    
+   
+    Dec alu_dec (
+        .ALUOp(ALUOp),
+        .funct3(instruction_out[14:12]),
+        .funct7_5(instruction_out[30]),
+        .ALUControl(ALUControl)
+    );
+
+    // ALU Source Mux
+    
+   
+    wire overflowflag;
+    
+    // ALU
+    ALU32 alu(
+        .A(RD1),
+        .B(ALUSrc ? ImmExt : RD2),
+        .operation(ALUControl),
+        .ALUResult(ALUResult),
+        .zeroflag(Zero),
+        .signflag(Sign),
+        .overflowflag(overflowflag)
+    );
+    
+     
+   DataMemory dmem(
+     .clk(clk),
+     .reset(reset),
+          .addr(ALUResult), 
+          .din(RD2), 
+          .WE(MemWrite), 
+          .dout(DataMemory_out) 
+);
+    
+ 
+   
+ 
+    assign PCSrc = Branch && (
+    (instruction_out[14:12] == 3'b000 && Zero)   || 
+    (instruction_out[14:12] == 3'b001 && ~Zero)  || 
+    (instruction_out[14:12] == 3'b100 && Sign)      
+);
+
+    
+   assign WD3 = (ResultSrc == 2'b00) ? ALUResult :
+             (ResultSrc == 2'b01) ? DataMemory_out :
+             32'b0;
+    
+    // ALU Control
+    assign no=ALUResult;
+    
+    // Branch Logic
+   
+    
+   
+
+endmodule
