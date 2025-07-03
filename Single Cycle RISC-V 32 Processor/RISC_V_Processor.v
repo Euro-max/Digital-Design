@@ -12,9 +12,8 @@ module RISC_V_Processor(
     wire [31:0] DataMemory_out;
     wire [31:0] ImmExt;
     wire [31:0] RD1, RD2, WD3;
-    wire [31:0] ALUResult, ALUOut;
-    wire [31:0] ReadData;
-        wire [31:0] instruction_out;
+    wire [31:0] ALUResult;
+    wire [31:0] instruction_out;
     wire Zero, Sign;
     
     // Control signals
