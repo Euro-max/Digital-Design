@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 module RISC_V_Processor(
     input clk,
     input reset,
@@ -5,7 +7,7 @@ module RISC_V_Processor(
 );
 
 
-    wire [31:0] PC, PCNext;
+    wire [31:0] PC;
     wire PCSrc;
     wire [31:0] DataMemory_out;
     wire [31:0] ImmExt;
@@ -16,23 +18,16 @@ module RISC_V_Processor(
     wire Zero, Sign;
     
     // Control signals
-    wire RegWrite, ALUSrc, MemWrite, ResultSrc, Branch;
+    wire RegWrite,ALUSrc, MemWrite,Branch;
+    wire [1:0]ResultSrc;
     wire [1:0] ImmSrc, ALUOp;
     wire [2:0] ALUControl;
     
     // Instruction fields
-    wire [6:0] opcode;
-    wire [4:0] rs1, rs2, rd;
-    wire [2:0] funct3;
-    wire funct7;
+   
     
     // Extract instruction fields
-    assign opcode = instruction_out[6:0];
-    assign rd = instruction_out[11:7];
-    assign funct3 = instruction_out[14:12];
-    assign rs1 = instruction_out[19:15];
-    assign rs2 = instruction_out[24:20];
-    assign funct7 = instruction_out[30];
+
     wire[31:0]PCNext_from_PCNext_Calc;
     // ControlUnit
    Control_Unit main_dec (
@@ -68,15 +63,15 @@ module RISC_V_Processor(
     
    // Instruction Memory (ROM)
 ROM imem(
-    .addr(PC),      // Convert byte address to word address (6 bits)
-    .instr(instruction_out)        // 32-bit instruction output
+    .addr(PC),      
+    .instr(instruction_out)        
 );
     
     // Register File
     RegFile reg_file(
         .clk(clk),
         .reset(reset),
-        .we3(RegWrite),
+        .RegWrite(RegWrite),
         .a1(instruction_out[19:15]),
         .a2(instruction_out[24:20]),
         .a3(instruction_out[11:7]),
@@ -85,7 +80,7 @@ ROM imem(
         .rd2(RD2)
     );
     
-   
+    // ALU Decoder
     Dec alu_dec (
         .ALUOp(ALUOp),
         .funct3(instruction_out[14:12]),
@@ -93,7 +88,7 @@ ROM imem(
         .ALUControl(ALUControl)
     );
 
-    // ALU Source Mux
+   
     
    
     wire overflowflag;
@@ -109,10 +104,9 @@ ROM imem(
         .overflowflag(overflowflag)
     );
     
-     
+     //DATA Memory
    DataMemory dmem(
      .clk(clk),
-     .reset(reset),
           .addr(ALUResult), 
           .din(RD2), 
           .WE(MemWrite), 
@@ -136,7 +130,7 @@ ROM imem(
     // ALU Control
     assign no=ALUResult;
     
-    // Branch Logic
+    
    
     
    
